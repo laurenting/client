@@ -74,7 +74,11 @@ func (p *HTTPClient) Do(method, url, body string, extraHeaders map[string]string
 }
 
 func (p *HTTPClient) do(method, url, body string, extraHeaders map[string]string) (int, http.Header, []byte, error) {
-	res, err := p._do(method, url, body, extraHeaders)
+	var bodyReader io.Reader
+	if len(body) > 0 {
+		bodyReader = strings.NewReader(body)
+	}
+	res, err := p._do(method, url, bodyReader, extraHeaders)
 	if err != nil {
 		return -1, nil, nil, err
 	}
@@ -86,11 +90,7 @@ func (p *HTTPClient) do(method, url, body string, extraHeaders map[string]string
 	return res.StatusCode, res.Header.Clone(), pageSource, nil
 }
 
-func (p *HTTPClient) _do(method, url, body string, extraHeaders map[string]string) (*http.Response, error) {
-	var bodyReader io.Reader
-	if len(body) > 0 {
-		bodyReader = strings.NewReader(body)
-	}
+func (p *HTTPClient) _do(method, url string, bodyReader io.Reader, extraHeaders map[string]string) (*http.Response, error) {
 	// get raw page string from server
 	req, err := http.NewRequest(method, url, bodyReader)
 	if err != nil {
@@ -108,7 +108,7 @@ func (p *HTTPClient) _do(method, url, body string, extraHeaders map[string]strin
 	return p.client.Do(req)
 }
 
-func (p *HTTPClient) DoStream(method, url, body string, extraHeaders map[string]string) (statusCode int, header http.Header, respBody io.ReadCloser, err error) {
+func (p *HTTPClient) DoStream(method, url string, body io.Reader, extraHeaders map[string]string) (statusCode int, header http.Header, respBody io.ReadCloser, err error) {
 	res, err := p._do(method, url, body, extraHeaders)
 	if err != nil {
 		return -1, nil, nil, err
